@@ -1,131 +1,268 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { setProfile, loadUserState } from "@/lib/storage";
+import type { CtcBand, Living, Profile } from "@/lib/types";
 
-export const metadata = {
-  title: "Start free — NayaJob",
-  description: "Tell us 4 things, get your personalized 12-month roadmap.",
-};
+const CITIES = [
+  "Hyderabad",
+  "Bangalore",
+  "Pune",
+  "Chennai",
+  "Mumbai",
+  "Delhi NCR",
+  "Kolkata",
+  "Ahmedabad",
+  "Other",
+];
+const CTC_BANDS: { value: CtcBand; label: string }[] = [
+  { value: "3-5", label: "₹3 – 5 LPA" },
+  { value: "5-8", label: "₹5 – 8 LPA" },
+  { value: "8-12", label: "₹8 – 12 LPA" },
+  { value: "12-20", label: "₹12 – 20 LPA" },
+  { value: "20+", label: "₹20 LPA +" },
+  { value: "skip", label: "Prefer not to say" },
+];
+const LIVING: { value: Living; label: string }[] = [
+  { value: "alone", label: "Alone, in a rented flat" },
+  { value: "shared", label: "Shared flat with friends" },
+  { value: "parents", label: "With parents" },
+];
 
 export default function StartPage() {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [profile, setLocalProfile] = useState<Profile>({
+    joiningMonth: "",
+    ctcBand: "skip",
+    city: "",
+    living: "alone",
+  });
+
+  // Hydrate from existing storage so a returning user can edit, not redo.
+  useEffect(() => {
+    const s = loadUserState();
+    if (s.profile.joiningMonth || s.profile.city) {
+      setLocalProfile(s.profile);
+    }
+  }, []);
+
+  function next() {
+    setStep((s) => Math.min(4, s + 1));
+  }
+  function prev() {
+    setStep((s) => Math.max(1, s - 1));
+  }
+  function submit() {
+    setProfile(profile);
+    router.push("/roadmap/");
+  }
+
+  const canAdvance =
+    (step === 1 && profile.joiningMonth.length > 0) ||
+    (step === 2 && profile.ctcBand !== undefined) ||
+    (step === 3 && profile.city.length > 0) ||
+    step === 4;
+
   return (
     <>
       <Nav />
-      <main className="mx-auto max-w-2xl px-6 py-20 md:py-28">
-        <div className="text-[12px] uppercase tracking-[0.18em] text-ochre font-medium">
-          Step 1 of 4
-        </div>
-        <h1 className="mt-3 font-display font-light text-h1 text-ink">
-          Let&rsquo;s personalize your roadmap.
-        </h1>
-        <p className="mt-4 text-[16px] text-ink-2 max-w-prose leading-relaxed">
-          Sixty seconds. Four questions. We don&rsquo;t need your name, your
-          phone, or your password. Just enough to know what&rsquo;s
-          actually relevant for <em>you</em>.
-        </p>
+      <main className="mx-auto max-w-2xl px-6 py-16 md:py-24">
+        <Stepper step={step} total={4} />
 
-        <form className="mt-12 space-y-10">
-          <Field
-            label="When did you (or will you) join your first job?"
-            hint="Approximate is fine."
-          >
-            <input
-              type="month"
-              className="block w-full rounded-lg border border-border bg-bg px-4 py-3 text-[15px] text-ink focus:border-ochre focus:outline-none focus:ring-2 focus:ring-ochre/20"
-              placeholder="May 2026"
-            />
-          </Field>
-
-          <Field label="What's your annual CTC band?">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {["₹3–5 LPA", "₹5–8 LPA", "₹8–12 LPA", "₹12–20 LPA", "₹20L+", "Prefer not to say"].map(
-                (opt) => (
-                  <label
-                    key={opt}
-                    className="cursor-pointer rounded-lg border border-border bg-bg px-3 py-2.5 text-[14px] text-ink-2 hover:border-ochre hover:text-ink transition-colors text-center"
-                  >
-                    <input type="radio" name="ctc" value={opt} className="hidden peer" />
-                    <span className="peer-checked:text-ochre">{opt}</span>
-                  </label>
-                ),
-              )}
-            </div>
-          </Field>
-
-          <Field label="Which city are you working in?">
-            <select
-              className="block w-full rounded-lg border border-border bg-bg px-4 py-3 text-[15px] text-ink focus:border-ochre focus:outline-none focus:ring-2 focus:ring-ochre/20"
-              defaultValue=""
+        <div className="mt-10">
+          {step === 1 && (
+            <Step
+              eyebrow="Step 1 of 4 · Joining month"
+              title="When are you joining (or did you join) your first job?"
+              hint="Approximate is fine. We use it to set deadlines for things like Form 12BB and ITR."
             >
-              <option value="" disabled>
-                Pick your city
-              </option>
-              <option>Hyderabad</option>
-              <option>Bangalore</option>
-              <option>Pune</option>
-              <option>Chennai</option>
-              <option>Mumbai</option>
-              <option>Delhi NCR</option>
-              <option>Other</option>
-            </select>
-          </Field>
+              <input
+                type="month"
+                value={profile.joiningMonth}
+                onChange={(e) =>
+                  setLocalProfile((p) => ({ ...p, joiningMonth: e.target.value }))
+                }
+                className="block w-full rounded-lg border border-border bg-bg px-4 py-3 text-[15px] text-ink focus:border-ochre focus:outline-none focus:ring-2 focus:ring-ochre/20"
+              />
+            </Step>
+          )}
 
-          <Field label="Living situation?">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              {[
-                { v: "alone", l: "Alone, in a rented flat" },
-                { v: "shared", l: "Shared flat with friends" },
-                { v: "parents", l: "With parents" },
-              ].map((opt) => (
-                <label
-                  key={opt.v}
-                  className="cursor-pointer rounded-lg border border-border bg-bg px-3 py-3 text-[14px] text-ink-2 hover:border-ochre hover:text-ink transition-colors text-center"
-                >
-                  <input type="radio" name="living" value={opt.v} className="hidden peer" />
-                  <span className="peer-checked:text-ochre">{opt.l}</span>
-                </label>
-              ))}
-            </div>
-          </Field>
+          {step === 2 && (
+            <Step
+              eyebrow="Step 2 of 4 · CTC band"
+              title="What's your annual CTC band?"
+              hint="We use this to gauge tax-saving headroom. We never store this server-side — it stays in your browser."
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {CTC_BANDS.map((opt) => (
+                  <Choice
+                    key={opt.value}
+                    selected={profile.ctcBand === opt.value}
+                    onClick={() =>
+                      setLocalProfile((p) => ({ ...p, ctcBand: opt.value }))
+                    }
+                  >
+                    {opt.label}
+                  </Choice>
+                ))}
+              </div>
+            </Step>
+          )}
 
+          {step === 3 && (
+            <Step
+              eyebrow="Step 3 of 4 · City"
+              title="Which city are you working in?"
+              hint="State-specific items like Professional Tax and Police Verification depend on this."
+            >
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {CITIES.map((c) => (
+                  <Choice
+                    key={c}
+                    selected={profile.city === c}
+                    onClick={() => setLocalProfile((p) => ({ ...p, city: c }))}
+                  >
+                    {c}
+                  </Choice>
+                ))}
+              </div>
+            </Step>
+          )}
+
+          {step === 4 && (
+            <Step
+              eyebrow="Step 4 of 4 · Living"
+              title="Where are you living?"
+              hint="HRA, rent agreement, voter ID transfer — these only apply if you're not with parents."
+            >
+              <div className="grid grid-cols-1 gap-2">
+                {LIVING.map((l) => (
+                  <Choice
+                    key={l.value}
+                    selected={profile.living === l.value}
+                    onClick={() =>
+                      setLocalProfile((p) => ({ ...p, living: l.value }))
+                    }
+                  >
+                    {l.label}
+                  </Choice>
+                ))}
+              </div>
+            </Step>
+          )}
+        </div>
+
+        <div className="mt-12 flex items-center justify-between">
           <button
-            type="submit"
-            disabled
-            className="w-full rounded-full bg-ink text-bg py-4 text-[15px] font-medium opacity-60 cursor-not-allowed"
+            type="button"
+            onClick={prev}
+            className={`text-[14px] text-ink-2 hover:text-ink ${
+              step === 1 ? "invisible" : ""
+            }`}
           >
-            Generate my roadmap → coming in v0.2
+            ← Back
           </button>
 
-          <p className="text-center text-[13px] text-ink-3">
-            Roadmap engine ships in v0.2. For now, drop a note at{" "}
-            <Link href="/" className="text-ochre underline">
-              hi@nayajob.in
-            </Link>{" "}
-            to be one of the first 100.
-          </p>
-        </form>
+          {step < 4 ? (
+            <button
+              type="button"
+              onClick={next}
+              disabled={!canAdvance}
+              className="rounded-full bg-ink text-bg px-7 py-3 text-[14px] font-medium hover:bg-ochre transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next →
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={submit}
+              className="rounded-full bg-ink text-bg px-7 py-3 text-[14px] font-medium hover:bg-ochre transition-colors"
+            >
+              Generate my roadmap →
+            </button>
+          )}
+        </div>
+
+        <p className="mt-10 text-center text-[12px] text-ink-3">
+          Your answers stay in your browser (localStorage). No login. No
+          server-side storage in this version.{" "}
+          <Link href="/privacy/" className="underline hover:text-ink">
+            Privacy details →
+          </Link>
+        </p>
       </main>
       <Footer />
     </>
   );
 }
 
-function Field({
-  label,
+function Stepper({ step, total }: { step: number; total: number }) {
+  return (
+    <div className="flex gap-2">
+      {Array.from({ length: total }, (_, i) => (
+        <div
+          key={i}
+          className={`flex-1 h-1 rounded-full transition-colors ${
+            i + 1 <= step ? "bg-ochre" : "bg-border"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Step({
+  eyebrow,
+  title,
   hint,
   children,
 }: {
-  label: string;
+  eyebrow: string;
+  title: string;
   hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <div className="text-[14.5px] font-medium text-ink">{label}</div>
+      <div className="text-[12px] uppercase tracking-[0.18em] text-ochre font-medium">
+        {eyebrow}
+      </div>
+      <h1 className="mt-3 font-display font-light text-h1 text-ink leading-tight">
+        {title}
+      </h1>
       {hint && (
-        <div className="mt-1 text-[13px] text-ink-3">{hint}</div>
+        <p className="mt-3 text-[15px] text-ink-2 leading-relaxed">{hint}</p>
       )}
-      <div className="mt-3">{children}</div>
+      <div className="mt-8">{children}</div>
     </div>
+  );
+}
+
+function Choice({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-left rounded-lg border px-4 py-3 text-[14.5px] transition-colors ${
+        selected
+          ? "border-ochre bg-ochre-soft/40 text-ink"
+          : "border-border bg-bg text-ink-2 hover:border-ink/30 hover:text-ink"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
