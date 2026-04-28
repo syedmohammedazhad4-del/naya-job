@@ -98,10 +98,13 @@ export default function StartPage() {
               title="What's your annual CTC band?"
               hint="We use this to gauge tax-saving headroom. We never store this server-side — it stays in your browser."
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-0 border-0 m-0">
+                <legend className="sr-only">Annual CTC band</legend>
                 {CTC_BANDS.map((opt) => (
                   <Choice
                     key={opt.value}
+                    name="ctc"
+                    value={opt.value}
                     selected={profile.ctcBand === opt.value}
                     onClick={() =>
                       setLocalProfile((p) => ({ ...p, ctcBand: opt.value }))
@@ -110,7 +113,7 @@ export default function StartPage() {
                     {opt.label}
                   </Choice>
                 ))}
-              </div>
+              </fieldset>
             </Step>
           )}
 
@@ -120,17 +123,20 @@ export default function StartPage() {
               title="Which city are you working in?"
               hint="State-specific items like Professional Tax and Police Verification depend on this."
             >
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <fieldset className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-0 border-0 m-0">
+                <legend className="sr-only">Working city</legend>
                 {CITIES.map((c) => (
                   <Choice
                     key={c}
+                    name="city"
+                    value={c}
                     selected={profile.city === c}
                     onClick={() => setLocalProfile((p) => ({ ...p, city: c }))}
                   >
                     {c}
                   </Choice>
                 ))}
-              </div>
+              </fieldset>
             </Step>
           )}
 
@@ -140,10 +146,13 @@ export default function StartPage() {
               title="Where are you living?"
               hint="HRA, rent agreement, voter ID transfer — these only apply if you're not with parents."
             >
-              <div className="grid grid-cols-1 gap-2">
+              <fieldset className="grid grid-cols-1 gap-2 p-0 border-0 m-0">
+                <legend className="sr-only">Living situation</legend>
                 {LIVING.map((l) => (
                   <Choice
                     key={l.value}
+                    name="living"
+                    value={l.value}
                     selected={profile.living === l.value}
                     onClick={() =>
                       setLocalProfile((p) => ({ ...p, living: l.value }))
@@ -152,7 +161,7 @@ export default function StartPage() {
                     {l.label}
                   </Choice>
                 ))}
-              </div>
+              </fieldset>
             </Step>
           )}
         </div>
@@ -247,16 +256,24 @@ function Choice({
   selected,
   onClick,
   children,
+  name,
+  value,
 }: {
   selected: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  name?: string;
+  value?: string;
 }) {
   return (
     <button
       type="button"
+      role={name ? "radio" : undefined}
+      aria-checked={name ? selected : undefined}
+      data-name={name}
+      data-value={value}
       onClick={onClick}
-      className={`text-left rounded-lg border px-4 py-3 text-[14.5px] transition-colors ${
+      className={`text-left rounded-lg border px-4 py-3 text-[14.5px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ochre/40 focus-visible:border-ochre ${
         selected
           ? "border-ochre bg-ochre-soft/40 text-ink"
           : "border-border bg-bg text-ink-2 hover:border-ink/30 hover:text-ink"

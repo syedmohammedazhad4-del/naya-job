@@ -46,8 +46,21 @@ export default function RoadmapPage() {
     return (
       <>
         <Nav />
-        <main className="mx-auto max-w-wide px-6 py-20">
-          <div className="text-ink-3 text-[14px]">Loading your roadmap…</div>
+        <main className="mx-auto max-w-wide px-6 py-12 md:py-16">
+          <div className="rounded-2xl border border-border bg-bg p-6 md:p-8 animate-pulse">
+            <div className="h-3 w-24 bg-paper rounded" />
+            <div className="mt-3 h-10 w-64 bg-paper rounded" />
+            <div className="mt-3 h-3 w-40 bg-paper/70 rounded" />
+            <div className="mt-6 h-1.5 w-full bg-paper rounded-full" />
+          </div>
+          <div className="mt-12 space-y-3">
+            {Array.from({ length: 4 }, (_, i) => (
+              <div
+                key={i}
+                className="h-16 rounded-lg border border-border bg-paper/40 animate-pulse"
+              />
+            ))}
+          </div>
         </main>
         <Footer />
       </>
